@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Autonomous Retail Checkout Queue Optimizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FAFAF7;--surface:#fff;--ink:#14213D;--mute:#59647A;--line:#DDE1E8;--brand:#2B3FD6;--soft:#EEF0FD;--fast:#0B8A7D;--mid:#B87B08;--slow:#C23F37;--on:#fff;
+--d:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;--b:"Public Sans","Segoe UI",system-ui,sans-serif;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1424;--surface:#161E33;--ink:#E9EDF7;--mute:#9AA5BD;--line:#27314A;--brand:#8E9BFF;--soft:#1B2547;--fast:#3CC7B6;--mid:#E3AC3A;--slow:#EE7A72;--on:#0E1424}}
+:root[data-theme="dark"]{--bg:#0E1424;--surface:#161E33;--ink:#E9EDF7;--mute:#9AA5BD;--line:#27314A;--brand:#8E9BFF;--soft:#1B2547;--fast:#3CC7B6;--mid:#E3AC3A;--slow:#EE7A72;--on:#0E1424}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.7 var(--b)}
+a{color:var(--brand)}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px;border-radius:4px}
+.w{max-width:1100px;margin:0 auto;padding:0 20px}.col{max-width:720px}
+header{border-bottom:1px solid var(--line);background:var(--surface)}
+header .w{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;flex-wrap:wrap}
+.logo{font:700 19px var(--d);text-decoration:none;color:var(--ink)}
+nav{display:flex;gap:22px;font-size:15px;flex-wrap:wrap}nav a{color:var(--mute);text-decoration:none}nav a[aria-current]{color:var(--ink);font-weight:600}
+.crumb{font-size:14px;color:var(--mute);margin:26px 0 0}.crumb a{color:var(--mute)}
+h1{font:700 clamp(32px,5vw,52px)/1.08 var(--d);letter-spacing:-.02em;margin:12px 0 14px;max-width:20ch}
+h2{font:700 clamp(24px,3vw,32px)/1.15 var(--d);letter-spacing:-.01em;margin:0 0 10px}
+.by{color:var(--mute);font-size:15px;margin:0 0 14px}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px;padding:0;list-style:none}
+.tags li{font-size:13px;background:var(--soft);color:var(--brand);padding:3px 11px;border-radius:99px}
+.lede{font-size:20px;color:var(--mute);margin:12px 0 28px}
+.note{border-left:4px solid var(--brand);background:var(--soft);padding:14px 18px;border-radius:0 10px 10px 0;margin:0 0 28px;font-size:16px}
+section{padding:44px 0 4px}
+.btn{font:600 15px var(--b);border:1px solid var(--brand);background:var(--brand);color:var(--on);padding:10px 18px;border-radius:8px;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.g{background:transparent;color:var(--brand)}
+.ctl{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 16px;font-size:14px;color:var(--mute)}
+input[type=range]{accent-color:var(--brand)}
+.fl{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card h3{font:700 19px var(--d);margin:0}.card p.s{margin:2px 0 12px;color:var(--mute);font-size:14px;line-height:1.5}
+.lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.lane{display:flex;flex-direction:column;gap:6px}
+.stack{display:flex;flex-direction:column;gap:5px;height:190px;justify-content:flex-end;padding:6px;border-radius:8px;border:2px solid transparent;transition:border-color .2s}
+.hit .stack{border-color:currentColor}
+.slot{height:25px;border-radius:6px;border:1px dashed var(--line)}.slot.on{border:0;background:currentColor}
+.till{background:currentColor;border-radius:8px;padding:7px 10px;display:flex;flex-direction:column}
+.till b,.till span{color:var(--on);font-size:13px;line-height:1.3}
+.l0{color:var(--fast)}.l1{color:var(--mid)}.l2{color:var(--slow)}
+.sc{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:14px;color:var(--mute)}
+.sc output{font:700 32px var(--d);color:var(--ink)}
+.st{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:14px}
+.st output{font:700 38px/1.1 var(--d);display:block}.st span{color:var(--mute);font-size:14px}
+.two{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start}
+svg.chart{width:100%;height:auto;display:block}
+.stt{font-size:14px;color:var(--mute);margin:8px 0 0}
+.hm{display:grid;grid-template-columns:auto repeat(6,1fr);gap:4px;max-width:400px}
+.hm div{aspect-ratio:1;display:grid;place-items:center;border-radius:6px;font:600 15px var(--d);color:var(--on)}
+.hm .ax{aspect-ratio:auto;background:none;color:var(--mute);font:500 13px var(--b)}
+.c0{background:var(--fast)}.c1{background:var(--mid)}.c2{background:var(--slow)}
+.key{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;color:var(--mute);margin-top:12px}
+.key i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps li{counter-increment:s;padding:14px 0 14px 46px;border-bottom:1px solid var(--line);position:relative}
+.steps li::before{content:counter(s);position:absolute;left:0;top:14px;width:30px;height:30px;border-radius:50%;background:var(--soft);color:var(--brand);display:grid;place-items:center;font:700 15px var(--d)}
+.steps b{display:block;font-family:var(--d)}
+blockquote{margin:0;padding:14px 18px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:16px}
+details{border-bottom:1px solid var(--line);padding:14px 0}summary{cursor:pointer;font:600 17px var(--b)}details p{margin:8px 0 0;color:var(--mute)}
+table{border-collapse:collapse;width:100%;font-size:15px}th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}th{width:28%;color:var(--mute);font-weight:600}
+.more{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:14px}
+.more a{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;text-decoration:none;color:var(--ink);font-weight:600;line-height:1.4}
+.more a small{display:block;color:var(--mute);font-weight:400;margin-top:4px}
+footer{margin-top:56px;border-top:1px solid var(--line);padding:26px 0 36px;color:var(--mute);font-size:14px}
+.sc-x{overflow-x:auto}
+@media(max-width:820px){.fl,.two,.st,.more{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header><div class="w"><a class="logo" href="#top">Checkout Queue Optimizer</a>
+<nav aria-label="Primary"><a href="#top">Live demo</a><a href="#results">Results</a><a href="#train">Training</a><a href="#policy">Policy</a><a href="#problem">Method</a></nav></div></header>
+
+<main class="w" id="top">
+<h1 style="margin-top:32px">Autonomous Retail Checkout Queue Optimizer</h1>
+<p class="by">Reinforcement learning for dynamic customer routing</p>
+<ul class="tags"><li>q-learning</li><li>reinforcement-learning</li><li>python</li><li>simulation</li><li>ai-project</li></ul>
+<p class="lede col">A model-free agent learns which of three checkout lanes should get each arriving shopper, without being told arrival or service rates. Run it below before reading how it works.</p>
+<p class="note col"><b>Scope.</b> Every number on this page comes from a simulated store with three lanes. It shows the method working in a controlled setting, not a measured result in a real supermarket.</p>
+
+<div class="ctl" role="group" aria-label="Simulation controls">
+<button class="btn" id="play" aria-pressed="true">Pause</button><button class="btn g" id="reset">Restart shift</button>
+<label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label><span id="clock"></span></div>
+<div class="fl">
+<article class="card"><h3>Random routing</h3><p class="s">Each shopper picks a lane by chance.</p><div class="lanes" id="sA"></div><div class="sc"><span>Wait-units so far</span><output id="wA">0</output></div></article>
+<article class="card"><h3>Q-learning routing</h3><p class="s">The agent reads all three queues, then chooses.</p><div class="lanes" id="sB"></div><div class="sc"><span>Wait-units so far</span><output id="wB">0</output></div></article>
+</div>
+
+<section id="results"><h2>Result: shorter queues over a 100-step shift</h2>
+<p class="col" style="color:var(--mute)">Averaged over 300 simulated shifts with identical arrivals and service draws for both strategies. The repository's single-run benchmark reports 381 versus 268 wait-units, a 29.66% reduction.</p>
+<div class="st"><div class="card"><output id="rBase">–</output><span>Random routing, average wait-units</span></div><div class="card"><output id="rQ">–</output><span>Q-learning, average wait-units</span></div><div class="card"><output id="rImp">–</output><span>Reduction in queue congestion</span></div></div></section>
+
+<section id="train"><h2>How the agent learns</h2>
+<p class="col" style="color:var(--mute)">It starts knowing nothing, tries lanes, sees the cost of the queues that result, and updates a table of 216 states × 3 actions over 250 episodes.</p>
+<div class="two"><div class="card"><svg class="chart" id="chart" viewBox="0 0 640 220" role="img" aria-label="Episode reward during training"></svg><p class="stt" id="ts">Training…</p></div>
+<div class="card"><button class="btn" id="rt">Retrain from scratch</button>
+<table style="margin-top:12px"><tbody><tr><th>α</th><td>0.10</td></tr><tr><th>γ</th><td>0.95</td></tr><tr><th>ε</th><td>0.40, decay 0.995, floor 0.05</td></tr><tr><th>Episodes</th><td>250 × 25 steps</td></tr></tbody></table></div></div></section>
+
+<section id="policy"><h2>What the agent decided</h2>
+<p class="col" style="color:var(--mute)">Each cell is the lane the trained agent picks for a pair of queue lengths in the fast and mid lanes.</p>
+<div class="card"><label style="display:flex;gap:12px;align-items:center;font-size:14px;color:var(--mute);margin-bottom:12px">Slow lane queue <input type="range" id="q2" min="0" max="5" value="0"> <b id="q2v" style="color:var(--ink)">0</b></label>
+<div class="hm" id="hm"></div><p class="stt">Rows: fast lane queue. Columns: mid lane queue.</p>
+<div class="key"><span><i style="background:var(--fast)"></i>Lane 0, fast</span><span><i style="background:var(--mid)"></i>Lane 1, mid</span><span><i style="background:var(--slow)"></i>Lane 2, slow</span></div></div></section>
+
+<section class="col" id="problem"><h2>Problem and method</h2>
+<p style="color:var(--mute)">Supermarket counters rarely serve at the same speed. Static or random assignment ignores this, so slower lanes back up while faster ones sit underused. The agent treats routing as a sequential decision problem and learns a dispatching policy purely from observed queue transitions, with no prior knowledge of arrival or service rates.</p>
+<div class="sc-x"><table><tbody>
+<tr><th>State</th><td>Queue lengths (q₀, q₁, q₂), each 0 to 5: 216 states.</td></tr>
+<tr><th>Action</th><td>Send the arriving customer to lane 0, 1 or 2.</td></tr>
+<tr><th>Service</th><td>A lane clears one customer per step with probability 0.60, 0.40 or 0.30.</td></tr>
+<tr><th>Reward</th><td>−(q₀ + q₁ + q₂ + 0.5 × queue variance): penalises total waiting and uneven load.</td></tr>
+<tr><th>Update</th><td>Q(s,a) ← Q(s,a) + α [ r + γ · max Q(s′,·) − Q(s,a) ]</td></tr></tbody></table></div></section>
+
+<section class="col" id="assumptions"><h2>Assumptions and limits</h2>
+<ul style="color:var(--mute);padding-left:20px"><li>One customer arrives per step; each lane clears at most one customer per step.</li><li>Service probabilities are fixed and the store has exactly three lanes.</li><li>Queues are capped at five, which keeps the state space small enough for a lookup table.</li><li>Results come from simulation, not from real store data.</li></ul></section>
+
+<section class="col" id="faq"><h2>Design notes</h2>
+<details><summary>Why Q-learning and not a neural network?</summary><p>With 216 states a table is enough and is easy to inspect. A neural network would matter once queue lengths or lane counts make the table too large.</p></details>
+<details><summary>Do I need a GPU?</summary><p>No. Training takes a fraction of a second on a laptop; this page trains in your browser.</p></details>
+<details><summary>How do I run the original code?</summary><p><code>pip install numpy matplotlib seaborn python-docx pygments</code>, then <code>python generate_q_learning_experiment.py</code>. Plots land in <code>q_learning_plots/</code>.</p></details></section>
+
+</main>
+<footer><div class="w">Source: <a href="https://github.com/kulin-m/-Autonomous-Retail-Checkout-Queue-Optimizer-SimPy-" target="_blank" rel="noopener">github.com/kulin-m/-Autonomous-Retail-Checkout-Queue-Optimizer-SimPy-</a> · Apache-2.0 licensed.</div></footer>
+
+<script>
+const MU=[.6,.4,.3],CAP=5,NM=[["Lane 0","fast, μ 0.60"],["Lane 1","mid, μ 0.40"],["Lane 2","slow, μ 0.30"]],$=i=>document.getElementById(i);
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const ix=q=>q[0]*36+q[1]*6+q[2],sum=q=>q[0]+q[1]+q[2];
+function step(q,a,u){const n=q.slice();n[a]=Math.min(CAP,n[a]+1);for(let i=0;i<3;i++)if(n[i]>0&&u[i]<MU[i])n[i]--;return n}
+function reward(q){const m=sum(q)/3,v=((q[0]-m)**2+(q[1]-m)**2+(q[2]-m)**2)/3;return-(sum(q)+.5*v)}
+function greedy(Q,q){const b=ix(q)*3;let a=0;if(Q[b+1]>Q[b+a])a=1;if(Q[b+2]>Q[b+a])a=2;return a}
+let Q=new Float64Array(648),rw=[],tok=0;
+function eps(Q,r,f,t,o){for(let e=f;e<t;e++){const ep=Math.max(.05,.4*Math.pow(.995,e));let q=[0,0,0],tot=0;
+for(let k=0;k<25;k++){const a=r()<ep?Math.floor(r()*3):greedy(Q,q),n=step(q,a,[r(),r(),r()]),R=reward(n),b=ix(n)*3,i=ix(q)*3+a;
+Q[i]+=.1*(R+.95*Math.max(Q[b],Q[b+1],Q[b+2])-Q[i]);tot+=R;q=n}o.push(tot)}}
+function evalQ(Q,N){const r=rng(2024);let x=0,y=0;for(let k=0;k<N;k++){let a=[0,0,0],b=[0,0,0];
+for(let t=0;t<100;t++){const u=[r(),r(),r()],ra=Math.floor(r()*3);a=step(a,ra,u);b=step(b,greedy(Q,b),u);x+=sum(a);y+=sum(b)}}return[x/N,y/N]}
+function chart(){const W=640,H=220,p={l:48,r:12,t:12,b:28},lo=Math.min(...rw,-400),hi=Math.max(...rw,-100);
+const X=i=>p.l+(W-p.l-p.r)*i/249,Y=v=>p.t+(H-p.t-p.b)*(hi-v)/(hi-lo||1);let g="";
+for(let k=0;k<=3;k++){const v=lo+(hi-lo)*k/3,y=Y(v);g+=`<line x1="${p.l}" x2="${W-p.r}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${p.l-6}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--mute)">${Math.round(v)}</text>`}
+g+=`<text x="${p.l}" y="${H-6}" font-size="11" fill="var(--mute)">Episode 1</text><text x="${W-p.r}" y="${H-6}" text-anchor="end" font-size="11" fill="var(--mute)">Episode 250</text>`;
+g+=`<polyline points="${rw.map((v,i)=>X(i)+","+Y(v)).join(" ")}" fill="none" stroke="var(--mute)" stroke-opacity=".4"/>`;
+g+=`<polyline points="${rw.map((_,i)=>{const s=rw.slice(Math.max(0,i-9),i+1);return X(i)+","+Y(s.reduce((a,b)=>a+b,0)/s.length)}).join(" ")}" fill="none" stroke="var(--brand)" stroke-width="2.5"/>`;$("chart").innerHTML=g}
+function done(){const[b,q]=evalQ(Q,300);$("rBase").textContent=b.toFixed(0);$("rQ").textContent=q.toFixed(0);$("rImp").textContent=((1-q/b)*100).toFixed(1)+"%";
+$("ts").textContent="Trained. Solid line: 10-episode moving average of reward per episode; higher is better.";heat();resetShift()}
+function train(an){const k=++tok;Q=new Float64Array(648);rw=[];const r=rng(Math.floor(Math.random()*1e9));$("ts").textContent="Training…";let e=0;
+(function c(){if(k!==tok)return;const t=an?Math.min(250,e+5):250;eps(Q,r,e,t,rw);e=t;chart();e<250?requestAnimationFrame(c):done()})()}
+function heat(){const z=+$("q2").value;$("q2v").textContent=z;let h='<div class="ax"></div>';for(let c=0;c<6;c++)h+=`<div class="ax">${c}</div>`;
+for(let a=0;a<6;a++){h+=`<div class="ax">${a}</div>`;for(let c=0;c<6;c++){const k=greedy(Q,[a,c,z]);h+=`<div class="c${k}" title="Queues ${a}, ${c}, ${z}: lane ${k}">${k}</div>`}}$("hm").innerHTML=h}
+let A,B,wA,wB,t,last,run=true,tm,sr;
+function resetShift(){A=[0,0,0];B=[0,0,0];wA=wB=t=0;last=[-1,-1];sr=rng(7+Math.floor(Math.random()*1e6));draw()}
+function lh(q,h){return[0,1,2].map(i=>{let s="";for(let k=0;k<CAP;k++)s+=`<div class="slot ${k<q[i]?"on":""}"></div>`;return`<div class="lane l${i} ${h===i?"hit":""}"><div class="stack">${s}</div><div class="till"><b>${NM[i][0]}</b><span>${NM[i][1]}</span></div></div>`}).join("")}
+function draw(){$("sA").innerHTML=lh(A,last[0]);$("sB").innerHTML=lh(B,last[1]);$("wA").textContent=wA;$("wB").textContent=wB;$("clock").textContent="Step "+t}
+function tick(){const u=[sr(),sr(),sr()],ra=Math.floor(sr()*3),qb=greedy(Q,B);A=step(A,ra,u);B=step(B,qb,u);wA+=sum(A);wB+=sum(B);t++;last=[ra,qb];draw()}
+function sched(){clearInterval(tm);if(run)tm=setInterval(tick,1100-$("speed").value*100)}
+$("play").onclick=()=>{run=!run;$("play").textContent=run?"Pause":"Resume";$("play").setAttribute("aria-pressed",run);sched()};
+$("reset").onclick=resetShift;$("speed").oninput=sched;$("q2").oninput=heat;$("rt").onclick=()=>train(true);
+if(matchMedia("(prefers-reduced-motion:reduce)").matches){run=false;$("play").textContent="Resume";$("play").setAttribute("aria-pressed","false")}
+train(false);sched();
+</script>
+</body>
+</html>
